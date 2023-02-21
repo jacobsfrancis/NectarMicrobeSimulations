@@ -23,9 +23,15 @@ NewData <- expand_grid(LearnFlowerSig=newFlowerSig, LearnMicrobeSig=newMicrobeSi
   ggplot(NewData,aes(x=LearnFlowerSig,y=Prediction))+geom_point(aes(size=LearnMicrobeSig))
   
   summary(decideMod)
-
   
 
+bee<-BeeInit()
+flower<-FlowerInit(
+)
+microbe1<-MicrobeInit()
+microbe2<-MicrobeInit()
+
+flower<-grow(microbe1 = microbe1, microbe2 = microbe2, flower= flower)
 
 experience<-data.frame(LearnMicrobeSig,LearnFlowerSig,LearnValue)
 if(var(experience$LearnMicrobeSig) ==0 & var(experience$LearnFlowerSig) ==0){

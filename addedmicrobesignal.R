@@ -1020,10 +1020,10 @@ ParmsList <- split(Parms,seq(nrow(Parms))) #need to feed mclapply a list
 #simulation2(nbees=1,Rm=0,signalDelt = .001) #just here for trouble shooting...
 cores<-detectCores()-2
 microbeSensitivity <- mclapply(X=ParmsList,FUN =  function(x){simulation2(nbees=10 ,signalDelt = x$Sig, Rm = x$Rm)},mc.cores = cores) 
-save(microbeSensitivity,list="microbesensitivity",file=".rdata")
+save(microbeSensitivity,list="microbeSensitivity",file=".rdata")
 
 
-simulation2(10,.002,.01)
+
 
 sensBees <- do.call(rbind,microbeSensitivity[[1]]$bees)
 sensBees$Rm <- Parms[1,"Rm"]
@@ -1099,7 +1099,8 @@ DensPlot <- endplot + geom_point(aes(y=AverageM1pul),position=position_dodge2(.0
   geom_smooth(aes(y=AverageM1pul),method="lm",color="black")+
   geom_smooth(aes(y=AverageM2pul),method="lm",color="dark orchid")+
   
-  facet_grid(~sigDelt)
+  facet_grid(~sigDelt)+
+  scale_y_log10()
 DensPlot
 pdf("AverageDensity.pdf",w=8,h=4)
 DensPlot
@@ -1146,8 +1147,8 @@ TimeToCol <- sensFlowers %>% group_by(ID,simNum) %>% dplyr::summarise(
   Rm = Rm[1],
   sigDelt = sigDelt[1]
   )
-TimeToCol$MinM1[TimeToCol$MinM1==Inf]<-500
-TimeToCol$MinM2[TimeToCol$MinM2==Inf]<-500
+TimeToCol$MinM1[TimeToCol$MinM1==Inf]<-200
+TimeToCol$MinM2[TimeToCol$MinM2==Inf]<-200
 
 MeltTimetoCol <- melt(TimeToCol,measure.vars =  c("MinM1","MinM2"))
 
@@ -1181,12 +1182,13 @@ ProbPlot<-ggplot(sensFlowers[sensFlowers$ID%in%FlowersVisited,],aes(y=visit,x=mi
   geom_point(position=position_jitter(h=.2),alpha=.01)+
   geom_smooth(method="glm",method.args=list(family="binomial"))+
   facet_grid(~Rm)
-ProbPlot 
+#ProbPlot 
 
 
 
-SigPlot<-ggplot(sensFlowers,aes(x=microbeSignal1,y=visit))
-+geom_point(alpha=.1,position=position_jitter(h=.2))+
+SigPlot<-ggplot(sensFlowers,aes(x=microbeSignal1,y=visit))+
+
+  #geom_point(alpha=.1,position=position_jitter(h=.2))+
   geom_smooth(method="glm",method.args=list(family="binomial"))+
   facet_grid(~Rm)
 pdf("signalPlot.pdf",w=12.5,h=12.5/2)
