@@ -120,7 +120,11 @@ BeeInit <- function(thresholdPar = c(0,100),        # we are going to specify th
     LearnMicrobeSig = 0,
     LearnRew = sugarPref,
     LearnVol = LearnVol,
-    LearnValue = LearnValue))                                             #these are the bees previous experiences.
+    LearnValue = LearnValue,
+    coef.Intercept = NA,
+    coef.LearnMicrobeSig = NA,
+    coef.LearnFlowerSig = NA,
+    coef.phi=NA)  )                                           #these are the bees previous experiences.
 }
 #BeeInit()   # wont work without assess... it is defined later...        
 
@@ -329,9 +333,23 @@ decide <- function(bee, flower, microbe1, microbe2){
   
     experience$wgts <- c(seq(from=1,to=3,length.out=NumberOfLandings-1),6)
     
-    decideMod <- betareg(data=experience,paste("LearnValue~",predictors,sep=""), weights = wgts)
+    #these were some processes to try and keep track of the coefficients from the previous
+    #decide model and use them as a starting point for the optimizers the next time a bee had to decide.
+    # startingCoef <- experience[nrow(experience),grep("coef",names(experience))]
+    # names(startingCoef)<-sub("coef.","",names(startingCoef))
+    # startingCoef <- startingCoef[,c("Intercept",predictors,"phi")]
     
+    # ficients <- coef(decideMod)
+    # 
+    # names(ficients) <- sub(pattern = "\\(","",names(ficients)) 
+    # names(ficients) <- sub(pattern = "\\)","",names(ficients))
+    # 
+    # bee[currentTime,paste("coef",names(ficients),sep=".")] <- ficients
+    # 
     
+    decideMod <- betareg(data=experience,paste("LearnValue~",predictors,sep=""), 
+                         weights = wgts, control=betareg.control(phi=F,
+                                                                 maxit=10000 ))
     
     prediction <- predict(decideMod,
             newdata=data.frame(
@@ -762,8 +780,8 @@ simulation <- function(nbees) { # we could name some parameters we wanted to stu
 
 # lets do a simulation where we test how pollinator population impacts visit frequency
 # 1- 5 bees with 10 reps per simulation
-beePopParms <- rep(5,10)
-
+beePopParms <- rep(5,20)
+simulation(nbees=1)
 #
 
 simulations  <- mclapply(X=beePopParms,FUN=function(x){simulation(nbees =x)}, mc.cores = 11)
@@ -1000,8 +1018,12 @@ Parms <- data.frame(Rm=rep(Parms1$Var1,20),Sig=rep(Parms1$Var2,20))
 ParmsList <- split(Parms,seq(nrow(Parms))) #need to feed mclapply a list
 
 #simulation2(nbees=1,Rm=0,signalDelt = .001) #just here for trouble shooting...
-microbeSensitivity <- mclapply(X=ParmsList,FUN =  function(x){simulation2(nbees=10 ,signalDelt = x$Sig, Rm = x$Rm)},mc.cores = 11) 
+cores<-detectCores()-2
+microbeSensitivity <- mclapply(X=ParmsList,FUN =  function(x){simulation2(nbees=10 ,signalDelt = x$Sig, Rm = x$Rm)},mc.cores = cores) 
+save(microbeSensitivity,list="microbesensitivity",file=".rdata")
 
+
+simulation2(10,.002,.01)
 
 sensBees <- do.call(rbind,microbeSensitivity[[1]]$bees)
 sensBees$Rm <- Parms[1,"Rm"]
