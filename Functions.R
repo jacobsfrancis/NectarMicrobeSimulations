@@ -117,7 +117,7 @@ MicrobeInit <- function(species = "microbe1",
 
 grow <- function(microbe1,microbe2,flower){
   # define some times
-  prev <- max(flower$time)
+  prev <- max(na.omit(flower$time))
   current <- prev + 1
   flower[current,]<-flower[prev,]
   flower$time[current]<- current
@@ -223,7 +223,7 @@ assess <- function (bee,flower,microbe1,microbe2){
 decide <- function(bee, flower, microbe1, microbe2){
   # bee senses a flower, decides whether to visit based on its threshold
   # flowsp <- flower$species # may need this when we add more species
-  currentTime <- max(flower$time)
+  currentTime <- max(na.omit(flower$time))
   
   #build a regression for flower and microbe signal
   
@@ -321,7 +321,7 @@ visit <- function(bee,flower,microbe1,microbe2){
   #bee gets microbes, assess flower, updates threshold
   
   ## flowsp <- flower[["species"]]   # may need if we add more species of flowers
-  currentTime <-  max(flower$time)
+  currentTime <-  max(na.omit(flower$time))
   prevBee <- bee[currentTime-1,]
   prevFlow <- flower[currentTime,]
   

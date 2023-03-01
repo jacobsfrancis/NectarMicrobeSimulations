@@ -1,12 +1,23 @@
 # Flower longevity
 
 source("Functions.R")
+library(tidyverse)
+library(ggplot2)
+library(reshape2)
+library(parallel)
+library(emmeans)
 
-simulation2 <- function(nbees,signalDelt,Rm) { # we could name some parameters we wanted to study in this line and then specify them in the initiation calls!
+library(betareg)
+library(gridExtra)
+library(grid)
+library(ggplot2)
+library(lattice)
+
+simulation2 <- function(nbees,signalDelt,Rm, probDeath, probBirth) { # we could name some parameters we wanted to study in this line and then specify them in the initiation calls!
   
   #make a field of random flowers
   Field <- list()
-  for(i in 1:500){
+  for(i in 1:200){  # Generate the Field of Flowers here there are 200
     Field[[i]] <- FlowerInit(signalPar = c(0,100), sugarPar = c(40,10), microbesP =c(0,0) )
   }
   for (i in 1:15){
@@ -22,15 +33,44 @@ simulation2 <- function(nbees,signalDelt,Rm) { # we could name some parameters w
     Learner[i] <- list(BeeInit(microbesPar = c(0,0),thresholdPar = c(median(signals)-rnorm(1,10,2),median(signals)+rnorm(1,10,2)))) #bee with 100 microbes
   }
   ti<- do.call(what = rbind,Field)
-  ggplot(ti,aes(x=flowerSignal,y=sugar))+geom_point()+geom_smooth(method="lm")
-  # 
-  Microbe1 <- MicrobeInit(Rm = Rm ,signalDelt = signalDelt ,sugarDelt = 0,growthRate = 1.02)
-  Microbe2 <- MicrobeInit(sugarDelt = 0,signalDelt = 0 , Rm = 0, growthRate = 1.02)
   
-  ####COMBACK####
-  for(i in 1:200){
+   
+  Microbe1 <- MicrobeInit(Rm = Rm ,signalDelt = signalDelt ,sugarDelt = 0, growthRate = 1.02)
+  Microbe2 <- MicrobeInit(sugarDelt = 0,signalDelt = 0 , Rm = 0, growthRate = 1.02)
+
+  deadFlowers  <- list() #I wont forget to put roses on your grave
+  
+  for(i in 1:10000){ #these are the time steps lets make alot of em
     #first figure out which flower bees will go to by randomly sampling as many flower as there are bees
     # print(i) not needed for parallel
+    
+    #Flowers die and are born####
+        deaths <- runif(length(Field),0,1)
+        births <- runif(length(Field),0,1)
+        
+        survived<-deaths>probDeath
+        
+        deadFlowers <- c(deadFlowers,Field[!survived])
+        
+        Field <- Field[survived]
+        
+        born <- births<probBirth
+        sum(born)
+        
+        newFlowers<- list()
+        for(j in 1:sum(born)){
+          newFL <- data.frame()
+          newFL <- FlowerInit(signalPar = c(0,100), sugarPar = c(40,10), microbesP =c(0,0))
+          newFL[i,] <- newFL[1,]
+          newFL[i,"time"]<-i
+          if(i>1){newFL[1,]<-NA}
+          newFlowers[[j]] <- newFL 
+        }
+        
+        Field <- c(Field,newFlowers)
+    
+    #bees encounter flowers####
+    
     encounters <- sample(1:length(Field), size = length(Learner), replace=F)
     encounterList <- vector("list",length(Field))
     encounterList[encounters] <- Learner
@@ -46,7 +86,7 @@ simulation2 <- function(nbees,signalDelt,Rm) { # we could name some parameters w
     })
   }
   
-  
+  Field <- c(Field,deadFlowers)
   
   Field <- lapply(X=Field, FUN= function(x){x$cumulativeVisits<-cumsum(x$visit)
   return(x)})
@@ -81,4 +121,6 @@ simulation2 <- function(nbees,signalDelt,Rm) { # we could name some parameters w
   )
   
 }
-
+start<-proc.time()
+test <- simulation2(nbees = 5, signalDelt = .002, Rm = -0.002, probBirth = .05, probDeath = .05)
+stop<-proc.time()
