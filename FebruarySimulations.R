@@ -55,7 +55,7 @@ library(gridExtra)
 library(grid)
 library(ggplot2)
 library(lattice)
-
+source("Functions.R")
 #Plotting parameters ####
 my_theme <- theme_bw() +
   theme(legend.position="none" , 
@@ -344,7 +344,7 @@ simulation <- function(nbees) { # we could name some parameters we wanted to stu
   )
   
 }
-
+# First Try at Simulation####
 # lets do a simulation where we test how pollinator population impacts visit frequency
 # 1- 5 bees with 10 reps per simulation
 beePopParms <- rep(5,20)
@@ -479,7 +479,8 @@ didbeeslearn
 dev.off()
 ggplot(bees,aes(x=time,group=ID,y=LearnValue))+geom_line(alpha=.2)
 ggplot(flowers[flowers$visit==1,],aes(x=sugar,y=cumulativeVisits))+geom_point()+geom_line(group=ID)
-# lets look at some microbe parameters...####
+
+# Simulation 2 lets look at some microbe parameters...####
 #we are going to use a starting point of 5 pollinator per hundred plants
 
 
@@ -565,11 +566,11 @@ simulation2 <- function(nbees,signalDelt,Rm) { # we could name some parameters w
 
 ## Do the simulations####
 
-RmParm <- c(-.002,0,.002)
+RmParm <- c(-.006,0,.006)
 SigDeltParm <- c(0,.002)      
 
 microbe<-data.frame(Population = rep(times=5,x = seq(0,10000,length.out=100)),
-                    Rm = rep(each=100,x=c(-.01,-.002,0,.002,.01)),times=5)
+                    Rm = rep(each=100,x=c(-.006,-.0006,0,.0006,.006)),times=5)
 
 microbe$Value <- with(microbe, expr = exp((Rm+Rm*Population))/(1+exp((Rm+Rm*Population))))
 RmPlot <- ggplot(microbe, aes(x=Population,y=Value,color=Rm))+geom_line(size=1.2)+facet_wrap(~Rm, nrow=1)+theme_bw()+
@@ -633,11 +634,11 @@ microbeCumulativeVisits <- ggplot(data=end,aes(x=microbesP1,y=cumulativeVisits))
   scale_x_log10()
 microbeCumulativeVisits
 
-TastymicrobeCumulativeVisits <- ggplot(data=end[end$Rm==0.002,],aes(x=microbesP1,y=cumulativeVisits))+
+TastymicrobeCumulativeVisits <- ggplot(data=end[end$Rm==0.006,],aes(x=microbesP1,y=cumulativeVisits))+
   geom_point(alpha=.01)+
   geom_smooth(aes(color=simNum),method=lm)+
   scale_x_log10()+
-  facet_grid(cols=vars(Rm),rows=vars(sigDelt))
+  facet_grid(cols=vars(Rm))
   
 TastymicrobeCumulativeVisits 
 
@@ -720,8 +721,8 @@ TimeToCol$MinM2[TimeToCol$MinM2==Inf]<-200
 MeltTimetoCol <- melt(TimeToCol,measure.vars =  c("MinM1","MinM2"))
 
 timetocol <- ggplot(MeltTimetoCol, aes(x=Rm,color=variable,y=value))+
-  geom_violin(aes(x=(Rm),group=interaction(Rm,variable),fill=variable),alpha=.2)+
-  geom_point(alpha=.1,position=position_jitterdodge(jitter.widt=.0005,dodge.width=.001))+
+  #geom_violin(aes(x=(Rm),group=interaction(Rm,variable),fill=variable),alpha=.2)+
+  geom_point(alpha=.01,position=position_jitterdodge(jitter.width=.005,dodge.width=.001))+
   #geom_point(aes(y=MinM1),position=position_jitterdodge(.2,.2),alpha=.2)+
   #geom_point(aes(y=MinM2),,position=position_jitter(.0002),color="grey",alpha=.3)+
   geom_smooth(method="glm", method.args = list(family = "poisson"),se=T)+
@@ -766,7 +767,7 @@ SignalModel <- glm(data=sensFlowers[sample(nrow(sensFlowers),1000),],visit~micro
 drop1(SignalModel,test="Chisq",.~.)
 
 microbeSignal1<-seq(1,250,by=10)
-Rm <- c(-0.002,0,0.002)
+Rm <- c(-0.006,0,0.062)
 sigDelt<-c(0,0.02)
 newdata<-data.frame(expand.grid(microbeSignal1=microbeSignal1,Rm=Rm,sigDelt=sigDelt))
 
@@ -837,7 +838,7 @@ ggplot(visitsbytime,aes(x=time,y=visits))+geom_point()+facet_grid(cols=vars(Rm),
 
 
 
-
+### Simulation 3 add in flower death####
 
 
 
